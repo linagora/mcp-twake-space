@@ -1,0 +1,7 @@
+build/
+docs/
+.env
+*.log
+node_modules/
+spikes/
+spikes/*/node_modules/
