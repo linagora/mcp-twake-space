@@ -15,6 +15,11 @@ All notable changes to mcp-twake-space are documented here. The format follows [
 - `whoami` reports the mode (session or API token) and the approval mode.
 - Write tools read the item they act on first, to quote it in the approval prompt.
 
+### Tests
+- End-to-end test of the built server over stdio against a fake Twake Space backend and identity provider (token command, approval accepted and refused, error exits).
+- Unit tests for the approval prompts, the identity (userinfo retried after a failure), the token command, dates across DST and name matching; `npm run typecheck` covers the tests; CI also checks `npm pack`.
+- Live scripts `scripts/live.mjs` (API token) and `scripts/live-session.mjs` (session, with approvals).
+
 ## [0.1.0] - 2026-11-01
 
 ### Added

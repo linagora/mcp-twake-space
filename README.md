@@ -237,11 +237,20 @@ mcp_servers:
 
 ```bash
 npm install
+npm run typecheck        # sources and tests
 npm run build
-npm test                 # Vitest, with a fake Twake Space backend
-LIVE_SPACE='<space where you are alone>' TWAKE_SPACE_URL=… TWAKE_SPACE_TOKEN_FILE=… node scripts/live.mjs          # API token
-LIVE_SPACE='<space where you are alone>' TWAKE_SPACE_URL=… TWAKE_SPACE_TOKEN_COMMAND=… node scripts/live-session.mjs  # as you, with prompts
+npm test                 # Vitest: unit tests, tools against a fake Twake Space backend,
+                         # and the built server over stdio (approval prompts included)
 ```
+
+Live tests against a real Twake Space, in a space where you are the only member (both scripts refuse any other):
+
+```bash
+LIVE_SPACE='<space>' TWAKE_SPACE_URL=… TWAKE_SPACE_TOKEN_FILE=… TWAKE_SPACE_APPROVAL=client node scripts/live.mjs   # API token
+LIVE_SPACE='<space>' TWAKE_SPACE_URL=… TWAKE_SPACE_TOKEN_COMMAND=… TWAKE_SPACE_OIDC_ISSUER=… node scripts/live-session.mjs  # as you
+```
+
+`live-session.mjs` answers the approval prompts itself: it refuses once (nothing must be posted), then accepts reversible actions and undoes them.
 
 ## Contributing
 

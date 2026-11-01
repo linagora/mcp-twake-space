@@ -24,7 +24,7 @@ export type Identity =
  */
 export function makeIdentify(api: SpaceClient, opts: { issuer?: string; fetchFn?: typeof fetch } = {}): () => Promise<Identity> {
   const fetchFn = opts.fetchFn ?? globalThis.fetch;
-  const cache = new Map<string, Promise<Identity>>();
+  const cache = new Map<string, { identity: Promise<Identity>; until: number }>();
   const resolve = async (token: string): Promise<Identity> => {
     if (token.startsWith('tws_')) return { kind: 'token', id: undefined, token: await api.request<TokenInfo>('GET', '/tokens/self') };
     const out: Identity = { kind: 'session' };
@@ -54,15 +54,16 @@ export function makeIdentify(api: SpaceClient, opts: { issuer?: string; fetchFn?
   return async () => {
     const token = await api.token();
     const kind = token.startsWith('tws_') ? `tws:${token.slice(-8)}` : 'session';
-    let p = cache.get(kind);
-    if (!p) {
-      p = resolve(token).then((id) => {
-        if (id.kind === 'token') id.id = id.token.accountId ?? undefined;
-        return id;
-      });
-      p.catch(() => cache.delete(kind));
-      cache.set(kind, p);
-    }
+    const hit = cache.get(kind);
+    if (hit && hit.until > Date.now()) return hit.identity;
+    const p = resolve(token).then((id) => {
+      if (id.kind === 'token') id.id = id.token.accountId ?? undefined;
+      // A session user whose userinfo failed is asked again a minute later, not kept partial for good.
+      if (id.kind === 'session' && !id.id) cache.set(kind, { identity: p, until: Date.now() + 60_000 });
+      return id;
+    });
+    cache.set(kind, { identity: p, until: Number.POSITIVE_INFINITY });
+    p.catch(() => cache.delete(kind));
     return p;
   };
 }

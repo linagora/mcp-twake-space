@@ -20,8 +20,9 @@ Requirements: Node.js >= 22 and npm.
 git clone https://github.com/linagora/mcp-twake-space.git
 cd mcp-twake-space
 npm install
-npm run build   # compile TypeScript to build/
-npm test        # run the test suite (Vitest)
+npm run typecheck  # sources and tests
+npm run build      # compile TypeScript to build/
+npm test           # Vitest (needs the build: the end-to-end test runs build/index.js)
 ```
 
 Tests never touch a real server: they use mocks and fixtures. Do not add tests that need real credentials.
@@ -38,7 +39,7 @@ src/
   identity.ts        # who the server acts as (API token or OIDC userinfo)
   approval.ts        # prior approval of every write through MCP elicitation
   index.ts           # stdio transport, `check` command
-scripts/             # live test against a real space (never run in CI)
+scripts/             # live tests against a real space where you are the only member (never in CI)
 tests/               # unit tests with a fake Twake Space backend (Vitest)
 ```
 
@@ -56,7 +57,8 @@ tests/               # unit tests with a fake Twake Space backend (Vitest)
 - Branch from `main`: `feat/…`, `fix/…`, `docs/…`, `refactor/…`, `test/…`, `chore/…`.
 - Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat: add attendee support to create_event`.
 - Keep pull requests focused on one concern, describe what changes and why, and link the related issue.
-- Before opening the pull request: `npm run build` and `npm test` must pass (CI runs both).
+- Before opening the pull request: `npm run typecheck`, `npm run build` and `npm test` must pass (CI runs them, and `npm pack --dry-run`).
+- A new write tool goes through `act()` in `src/tools.ts` (prior approval) and gets a test proving nothing is written when the user refuses.
 - Add a line to [CHANGELOG.md](CHANGELOG.md) under *Unreleased* for any user-visible change.
 
 ## Developer Certificate of Origin

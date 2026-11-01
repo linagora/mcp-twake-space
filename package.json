@@ -17,8 +17,8 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build && npm test"
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "prepublishOnly": "npm run typecheck && npm run build && npm test"
   },
   "engines": {
     "node": ">=22"
