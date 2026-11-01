@@ -10,6 +10,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { loadConfig, type Config } from './config.js';
+import { makeIdentify } from './identity.js';
 import { SpaceClient, fileTokenSource, type TokenSource } from './space.js';
 import { CommandTokenProvider } from './token-command.js';
 import { registerTools } from './tools.js';
@@ -24,6 +25,7 @@ function tokenSource(auth: Config['auth']): TokenSource {
 async function main(): Promise<void> {
   const config = loadConfig();
   const api = new SpaceClient(config, tokenSource(config.auth));
+  const identify = makeIdentify(api, { issuer: config.oidcIssuer });
 
   // Fail fast with an actionable message rather than exposing broken tools.
   let spaces: { spaces: { name: string }[] };
@@ -36,17 +38,24 @@ async function main(): Promise<void> {
   }
 
   if (process.argv[2] === 'check') {
-    const self = await api.request<{ name: string; scopes: string[]; expiresAt: string | null }>('GET', '/tokens/self').catch(() => undefined);
-    process.stdout.write(
-      `mcp-twake-space ${VERSION}: OK, ${spaces.spaces.length} space(s) at ${config.appUrl}` +
-        (self ? `\ntoken "${self.name}", scopes ${self.scopes.join(' ')}, expires ${self.expiresAt ?? 'never'}` : '') +
-        '\n',
-    );
+    const id = await identify().catch(() => undefined);
+    const who =
+      id?.kind === 'token'
+        ? `token "${id.token.name}", scopes ${id.token.scopes.join(' ')}, expires ${id.token.expiresAt ?? 'never'}`
+        : `session token${id?.id ? ', user known' : ', user unknown (set TWAKE_SPACE_OIDC_ISSUER)'}`;
+    process.stdout.write(`mcp-twake-space ${VERSION}: OK, ${spaces.spaces.length} space(s) at ${config.appUrl}\n${who}; approval: ${config.approval}\n`);
     return;
   }
 
   const server = new McpServer({ name: 'mcp-twake-space', version: VERSION });
-  registerTools(server, api, { appUrl: config.appUrl, timeZone: config.timeZone });
+  registerTools(server, api, {
+    appUrl: config.appUrl,
+    timeZone: config.timeZone,
+    approval: config.approval,
+    approvalTimeoutMs: config.approvalTimeoutMs,
+    language: config.language,
+    identify,
+  });
   await server.connect(new StdioServerTransport());
   process.stderr.write(`mcp-twake-space ${VERSION} connected to ${config.appUrl}\n`);
 }

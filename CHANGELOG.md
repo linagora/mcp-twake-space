@@ -4,6 +4,17 @@ All notable changes to mcp-twake-space are documented here. The format follows [
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-01
+
+### Added
+- Acting as the user with an OIDC session token (`TWAKE_SPACE_TOKEN_COMMAND`); `TWAKE_SPACE_OIDC_ISSUER` tells the server who the user is.
+- Prior approval of every write by the user, asked by the server itself through MCP elicitation (`TWAKE_SPACE_APPROVAL=elicit`, the default): exact action, identity, space and a unique reference; fails closed. `TWAKE_SPACE_APPROVAL=client` leaves it to the MCP client. Prompts in English or French (`USER_LANGUAGE`).
+- Session tools: `get_unread`, `react`, `vote`, `decide_approval`, `answer_feedback`, `acknowledge`, `mark_feed_read`, `mark_notifications_read`, `schedule_meeting` (video meeting in the team calendar); `pin_announcement` for both token kinds.
+
+### Changed
+- `whoami` reports the mode (session or API token) and the approval mode.
+- Write tools read the item they act on first, to quote it in the approval prompt.
+
 ## [0.1.0] - 2026-11-01
 
 ### Added

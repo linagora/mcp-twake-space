@@ -1,6 +1,6 @@
 {
   "name": "mcp-twake-space",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for Twake.ai Space: give any MCP-compatible AI assistant secure access to your team spaces, their feed (posts, polls, approvals, announcements) and the resources of each space",
   "type": "module",
   "main": "build/index.js",

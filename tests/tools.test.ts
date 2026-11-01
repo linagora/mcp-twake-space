@@ -102,7 +102,7 @@ beforeEach(async () => {
   state = freshState();
   const server = new McpServer({ name: 'test', version: '0' });
   const api = new SpaceClient({ apiUrl: 'https://space.example.com/api', timeoutMs: 1000 }, { getToken: async () => 'tws_x', invalidate() {} }, fakeFetch);
-  registerTools(server, api, { appUrl: 'https://space.example.com', timeZone: 'Europe/Paris' });
+  registerTools(server, api, { appUrl: 'https://space.example.com', timeZone: 'Europe/Paris', approval: 'client' });
   const [ct, st] = InMemoryTransport.createLinkedPair();
   await server.connect(st);
   client = new Client({ name: 'c', version: '0' });
@@ -123,8 +123,8 @@ describe('catalog', () => {
   it('registers the read, feed write and admin tools with annotations', async () => {
     const tools = (await client.listTools()).tools;
     const by = Object.fromEntries(tools.map((t) => [t.name, t]));
-    const READ = ['whoami', 'list_spaces', 'get_space', 'get_feed', 'get_feed_item', 'get_pinned', 'catch_up', 'get_notifications', 'search_directory'];
-    const WRITE = ['create_post', 'edit_post', 'close_post', 'create_space', 'update_space', 'add_members', 'set_member_role'];
+    const READ = ['whoami', 'list_spaces', 'get_space', 'get_feed', 'get_feed_item', 'get_pinned', 'get_unread', 'catch_up', 'get_notifications', 'search_directory'];
+    const WRITE = ['create_post', 'edit_post', 'close_post', 'pin_announcement', 'react', 'vote', 'decide_approval', 'answer_feedback', 'acknowledge', 'mark_feed_read', 'mark_notifications_read', 'schedule_meeting', 'create_space', 'update_space', 'add_members', 'set_member_role'];
     const DESTRUCTIVE = ['delete_post', 'set_space_state', 'remove_member'];
     expect(Object.keys(by).sort()).toEqual([...READ, ...WRITE, ...DESTRUCTIVE].sort());
     for (const n of READ) expect(by[n].annotations?.readOnlyHint).toBe(true);
@@ -137,7 +137,7 @@ describe('catalog', () => {
 describe('read tools', () => {
   it('whoami reports the token, its scopes and how long it lasts', async () => {
     const r = (await call('whoami')).data;
-    expect(r).toMatchObject({ token: 'Hermes', owner: 'account', scopes: ['space:read', 'feed:read', 'feed:write'], spaces: 'all', expires: '2027-01-30 16:00' });
+    expect(r).toMatchObject({ mode: 'token', approval: 'client', token: 'Hermes', owner: 'account', scopes: ['space:read', 'feed:read', 'feed:write'], spaces: 'all', expires: '2027-01-30 16:00' });
     expect(r.days_left).toBeGreaterThan(0);
     expect(r.account).toBe('Alice MARTIN');
   });
@@ -217,13 +217,13 @@ describe('write tools', () => {
   });
 
   it('edits, closes and deletes posts', async () => {
-    await call('edit_post', { space: 'design', item_id: 'p1', text: 'corrigé' });
-    await call('close_post', { space: 'design', item_id: 'p1' });
-    await call('delete_post', { space: 'design', item_id: 'p1' });
+    await call('edit_post', { space: 'design', item_id: 'f-poll', text: 'corrigé' });
+    await call('close_post', { space: 'design', item_id: 'f-poll' });
+    await call('delete_post', { space: 'design', item_id: 'f-poll' });
     expect(writes().map((w) => [w.method, w.path, w.body])).toEqual([
-      ['PATCH', `/spaces/${S1}/feed/posts/p1`, { body: 'corrigé' }],
-      ['POST', `/spaces/${S1}/feed/posts/p1/close`, undefined],
-      ['DELETE', `/spaces/${S1}/feed/posts/p1`, undefined],
+      ['PATCH', `/spaces/${S1}/feed/posts/f-poll`, { body: 'corrigé' }],
+      ['POST', `/spaces/${S1}/feed/posts/f-poll/close`, undefined],
+      ['DELETE', `/spaces/${S1}/feed/posts/f-poll`, undefined],
     ]);
   });
 

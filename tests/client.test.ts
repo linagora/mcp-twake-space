@@ -24,6 +24,17 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ TWAKE_SPACE_URL: 'http://space.example.com', TWAKE_SPACE_TOKEN: 'tws_x' })).toThrow(/HTTPS/);
     expect(loadConfig({ TWAKE_SPACE_URL: 'http://localhost:3000', TWAKE_SPACE_TOKEN: 'tws_x' }).apiUrl).toBe('http://localhost:3000/api');
   });
+
+  it('asks for approval by default, in the chosen language', () => {
+    const base = { TWAKE_SPACE_URL: 'https://s.example.com', TWAKE_SPACE_TOKEN_COMMAND: 'broker' };
+    expect(loadConfig(base)).toMatchObject({ approval: 'elicit', approvalTimeoutMs: 600000, language: 'en', oidcIssuer: undefined });
+    expect(loadConfig({ ...base, TWAKE_SPACE_APPROVAL: 'client', USER_LANGUAGE: 'fr_FR', TWAKE_SPACE_OIDC_ISSUER: 'https://sso.example.com/' })).toMatchObject({
+      approval: 'client',
+      language: 'fr',
+      oidcIssuer: 'https://sso.example.com/',
+    });
+    expect(() => loadConfig({ ...base, TWAKE_SPACE_APPROVAL: 'none' })).toThrow(/TWAKE_SPACE_APPROVAL/);
+  });
 });
 
 describe('fileTokenSource', () => {

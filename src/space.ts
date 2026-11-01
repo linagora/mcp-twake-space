@@ -67,6 +67,11 @@ export class SpaceClient {
     private readonly fetchFn: typeof fetch = globalThis.fetch,
   ) {}
 
+  /** The current access token, to tell an API token (tws_…) from a session token. Never log it. */
+  token(): Promise<string> {
+    return this.tokens.getToken();
+  }
+
   async request<T = unknown>(
     method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
     path: string,

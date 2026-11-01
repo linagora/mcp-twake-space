@@ -35,6 +35,8 @@ src/
   token-command.ts   # access token from an external broker (TWAKE_SPACE_TOKEN_COMMAND)
   format.ts          # time zones, name matching, AI-friendly views of spaces and feed items
   tools.ts           # MCP tool implementations
+  identity.ts        # who the server acts as (API token or OIDC userinfo)
+  approval.ts        # prior approval of every write through MCP elicitation
   index.ts           # stdio transport, `check` command
 scripts/             # live test against a real space (never run in CI)
 tests/               # unit tests with a fake Twake Space backend (Vitest)
