@@ -33,6 +33,7 @@ const LABELS = {
     text: 'Text', kind: 'Kind', options: 'Options', approvers: 'Approvers', mentions: 'Notify', item: 'On', reaction: 'Reaction', choice: 'Choice', comment: 'Comment',
     rating: 'Rating', when: 'When', title: 'Title', description: 'Description', members: 'Members', member: 'Member', role: 'Role', name: 'Name', apps: 'Tabs',
     closes: 'Closes', pinned: 'Pinned', yes: 'yes', no: 'no', all: 'all',
+    multiple: 'Several choices', anonymous: 'Anonymous', color: 'Colour', cleared: '(cleared)', no_tabs: 'none (every tab removed)',
     session: (n: string) => `${n} (your account)`,
     token: (n: string) => `API token "${n}" (signed by the token)`,
   },
@@ -46,6 +47,7 @@ const LABELS = {
     text: 'Texte', kind: 'Type', options: 'Options', approvers: 'Approbateurs', mentions: 'Notifier', item: 'Sur', reaction: 'Réaction', choice: 'Choix', comment: 'Commentaire',
     rating: 'Note', when: 'Quand', title: 'Titre', description: 'Description', members: 'Membres', member: 'Membre', role: 'Rôle', name: 'Nom', apps: 'Onglets',
     closes: 'Clôture', pinned: 'Épinglée', yes: 'oui', no: 'non', all: 'tout',
+    multiple: 'Choix multiples', anonymous: 'Anonyme', color: 'Couleur', cleared: '(effacée)', no_tabs: 'aucun (tous les onglets retirés)',
     session: (n: string) => `${n} (votre compte)`,
     token: (n: string) => `jeton d'API « ${n} » (signé par le jeton)`,
   },
@@ -116,6 +118,28 @@ export function registerTools(server: McpServer, api: SpaceClient, opts: ToolOpt
     const id = await me();
     if (id?.kind === 'token') return L.token(id.token.name);
     return L.session((await whoName(id)) ?? '?');
+  };
+
+  /** The approval lines of create_post: only the fields its kind sends. */
+  const postDetails = (
+    kind: string,
+    a: { text: string; options?: string[]; multiple?: boolean; anonymous?: boolean; closes_at?: string; title?: string; color?: string; pinned?: boolean },
+    approvers: ApiMember[],
+    mentioned: ApiMember[],
+  ): Request['details'] => {
+    const yesNo = (v: boolean | undefined) => (v ? L.yes : L.no);
+    const closes = (): Request['details'][number] => [L.closes, a.closes_at ? time(iso(a.closes_at)) : undefined];
+    const byKind = (): Request['details'] => {
+      switch (kind) {
+        case 'poll': return [[L.options, a.options?.join(' | ')], [L.multiple, yesNo(a.multiple)], [L.anonymous, yesNo(a.anonymous)], closes()];
+        case 'yes_no': return [closes()];
+        case 'approval': return [[L.approvers, approvers.map(memberName).join(', ')]];
+        case 'announcement': return [[L.title, a.title], [L.color, a.color], [L.pinned, yesNo(a.pinned)]];
+        case 'feedback': return [[L.anonymous, yesNo(a.anonymous)]];
+        default: return [];
+      }
+    };
+    return [[L.kind, kind === 'message' ? undefined : kind], [L.text, a.text], ...byKind(), [L.mentions, mentioned.map(memberName).join(', ')]];
   };
 
   /** Ask the user, then act. */
@@ -270,7 +294,7 @@ export function registerTools(server: McpServer, api: SpaceClient, opts: ToolOpt
         query: z.string().min(1).max(200).optional().describe('Only items whose text, poll options, card title or preview contain this (case ignored).'),
         since: whenArg('Only items active since this time').optional(),
         limit: z.number().int().min(1).max(50).optional().describe('Default 20.'),
-        cursor: z.string().optional().describe('The "next" cursor of a previous call, for older items.'),
+        cursor: z.string().optional().describe('The "next" cursor of a previous call, for older items. Pass the same "since" as that call, or none if it had none.'),
       },
       annotations: READ,
     },
@@ -507,16 +531,7 @@ export function registerTools(server: McpServer, api: SpaceClient, opts: ToolOpt
           {
             action: L.create_post,
             space: s.name,
-            details: [
-              [L.kind, kind === 'message' ? undefined : kind],
-              [L.title, a.title],
-              [L.text, a.text],
-              [L.options, a.options?.join(' | ')],
-              [L.closes, a.closes_at ? time(iso(a.closes_at)) : undefined],
-              [L.approvers, approvers.map(memberName).join(', ')],
-              [L.mentions, mentioned.map(memberName).join(', ')],
-              [L.pinned, a.pinned ? L.yes : undefined],
-            ],
+            details: postDetails(kind, a, approvers, mentioned),
           },
           () => api.request<ApiFeedItem>('POST', `/spaces/${s.id}/feed/posts`, { body }),
         );
@@ -829,7 +844,12 @@ export function registerTools(server: McpServer, api: SpaceClient, opts: ToolOpt
       if (a.apps) body.apps = a.apps;
       if (!Object.keys(body).length) throw new ToolError('Give a name, a description or apps to change.');
       const s = await resolveSpace(a.space);
-      await act({ action: L.update_space, space: s.name, details: [[L.name, a.name], [L.description, a.description], [L.apps, a.apps?.join(', ')]] }, () =>
+      const details: Request['details'] = [
+        [L.name, a.name],
+        [L.description, a.description?.trim() === '' ? L.cleared : a.description],
+        [L.apps, a.apps && (a.apps.length ? a.apps.join(', ') : L.no_tabs)],
+      ];
+      await act({ action: L.update_space, space: s.name, details }, () =>
         api.request('PATCH', `/spaces/${s.id}`, { body }),
       );
       return { space_id: s.id, name: a.name ?? s.name, updated: Object.keys(body) };

@@ -41,6 +41,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const approval = (env.TWAKE_SPACE_APPROVAL ?? 'elicit').toLowerCase();
   if (approval !== 'elicit' && approval !== 'client') throw new Error('TWAKE_SPACE_APPROVAL must be elicit (default) or client');
   const lang = (env.TWAKE_SPACE_LANGUAGE ?? env.USER_LANGUAGE ?? 'en').toLowerCase().slice(0, 2);
+  const timeZone = env.USER_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone });
+  } catch {
+    throw new Error(`USER_TIMEZONE must be an IANA time zone such as Europe/Paris, not "${timeZone}"`);
+  }
   return {
     appUrl,
     apiUrl,
@@ -49,7 +55,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     approval,
     approvalTimeoutMs: positive('TWAKE_SPACE_APPROVAL_TIMEOUT_MS', env.TWAKE_SPACE_APPROVAL_TIMEOUT_MS, 600_000),
     language: lang === 'fr' ? 'fr' : 'en',
-    timeZone: env.USER_TIMEZONE || Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone,
     timeoutMs: positive('TWAKE_SPACE_TIMEOUT_MS', env.TWAKE_SPACE_TIMEOUT_MS, 30000),
   };
 }
