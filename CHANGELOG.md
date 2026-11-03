@@ -4,6 +4,15 @@ All notable changes to mcp-twake-space are documented here. The format follows [
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-03
+
+### Fixed
+
+- The approval prompt shows only the fields the kind of post sends (poll settings, colour, pinned), and names a cleared description or removed tabs when updating a space.
+- `USER_TIMEZONE` is checked at startup: an invalid IANA name fails with a clear message instead of breaking dates later.
+- The command token's result is reused for at least half its lifetime instead of re-running the command for every request.
+- README examples: audience `twakespace` (not `twake-space`), and `$HOME` instead of `~` in the Claude Code setup.
+
 ## [0.2.0] - 2026-11-01
 
 ### Added
