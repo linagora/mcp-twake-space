@@ -113,6 +113,25 @@ describe('approval before acting', () => {
     expect(t.prompts[1].match(/Réf\. (\w+)/)![1]).not.toBe(t.prompts[0].match(/Réf\. (\w+)/)![1]);
   });
 
+  it('shows only the fields the kind of post sends, with the poll settings', async () => {
+    const t = setup();
+    await t.call('create_post', { space: 'design', text: 'Quel jour ?', kind: 'poll', options: ['Lundi', 'Mardi'], title: 'ignoré', pinned: true });
+    expect(t.prompts[0]).toMatch(/Choix multiples : non/);
+    expect(t.prompts[0]).toMatch(/Anonyme : non/);
+    expect(t.prompts[0]).not.toMatch(/Titre|Épinglée|ignoré/);
+    expect(t.writes()[0].body).toEqual({ body: 'Quel jour ?', poll: { options: ['Lundi', 'Mardi'], multiple: false, anonymous: false } });
+    await t.call('create_post', { space: 'design', text: 'Fermé', kind: 'announcement', color: '#ff0000', pinned: false });
+    expect(t.prompts[1]).toMatch(/Couleur : #ff0000/);
+    expect(t.prompts[1]).toMatch(/Épinglée : non/);
+  });
+
+  it('shows a cleared description and removed tabs when updating a space', async () => {
+    const t = setup();
+    await t.call('update_space', { space: 'design', description: '', apps: [] });
+    expect(t.prompts[0]).toMatch(/Description : \(effacée\)/);
+    expect(t.prompts[0]).toMatch(/Onglets : aucun \(tous les onglets retirés\)/);
+  });
+
   it('does nothing when the user declines or does not answer, and says not to retry', async () => {
     for (const answer of ['decline', 'cancel'] as const) {
       const t = setup({ answer });

@@ -134,4 +134,17 @@ describe('CommandTokenProvider', () => {
     p.invalidate();
     expect(await p.getToken()).not.toBe(a);
   });
+
+  it('reuses a raw token with the default lifetime', async () => {
+    const p = new CommandTokenProvider('date +%s%N');
+    const a = await p.getToken();
+    expect(await p.getToken()).toBe(a);
+  });
+
+  it('runs the command again for a token about to expire', async () => {
+    const now = Math.floor(Date.now() / 1000);
+    const p = new CommandTokenProvider(`printf '{"access_token":"%s","expires_at":${now}}' $(date +%s%N)`);
+    const a = await p.getToken();
+    expect(await p.getToken()).not.toBe(a);
+  });
 });

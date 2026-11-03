@@ -10,7 +10,7 @@ import { execFile } from 'node:child_process';
  * consumes short-lived access tokens.
  */
 export class CommandTokenProvider {
-  private cached: { token: string; expiresAt: number } | null = null;
+  private cached: { token: string; refreshAt: number } | null = null;
   private pending: Promise<string> | null = null;
 
   constructor(
@@ -20,8 +20,7 @@ export class CommandTokenProvider {
 
   /** Return a valid access token, running the command only when needed. */
   async getToken(): Promise<string> {
-    const margin = (this.options.marginSeconds ?? 60) * 1000;
-    if (this.cached && Date.now() + margin < this.cached.expiresAt) {
+    if (this.cached && Date.now() < this.cached.refreshAt) {
       return this.cached.token;
     }
     if (!this.pending) {
@@ -70,7 +69,10 @@ export class CommandTokenProvider {
               return;
             }
           }
-          this.cached = { token, expiresAt };
+          // A margin as long as the lifetime would never reuse the token: keep at least half of it.
+          const lifetime = expiresAt - Date.now();
+          const margin = Math.min((this.options.marginSeconds ?? 60) * 1000, lifetime / 2);
+          this.cached = { token, refreshAt: expiresAt - margin };
           resolve(token);
         }
       );

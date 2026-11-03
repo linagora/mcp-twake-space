@@ -35,6 +35,10 @@ describe('loadConfig', () => {
     });
     expect(() => loadConfig({ ...base, TWAKE_SPACE_APPROVAL: 'none' })).toThrow(/TWAKE_SPACE_APPROVAL/);
   });
+
+  it('refuses a time zone that is not an IANA name', () => {
+    expect(() => loadConfig({ TWAKE_SPACE_URL: 'https://s.example.com', TWAKE_SPACE_TOKEN: 'tws_x', USER_TIMEZONE: 'Paris' })).toThrow(/USER_TIMEZONE.*"Paris"/);
+  });
 });
 
 describe('fileTokenSource', () => {
