@@ -73,6 +73,16 @@ Open source MCP servers connect AI assistants to the whole workplace:
 
 ## Installation
 
+### Quick start with mcp-twake-ai (recommended)
+
+```bash
+npx mcp-twake-ai setup
+```
+
+[mcp-twake-ai](https://github.com/linagora/mcp-twake-wizard) sets up this server and the other Twake.ai MCP servers for your Twake.ai account: it asks for your email, signs you in at the Twake.ai identity provider (in the browser, or with a code over SSH), and finds the agents on your computer (Claude Code, Hermes, Claude Desktop, Cursor, VS Code) and the services of your account. It then installs pinned versions of the servers, writes their entries in each agent's configuration and checks that each server starts. For any other agent, `mcp-twake-ai export --agent <id>` writes the configuration files.
+
+### Manual installation
+
 ```bash
 npm install -g mcp-twake-space   # or run it on demand with npx -y mcp-twake-space
 ```
@@ -93,9 +103,11 @@ npm run build          # then run: node build/index.js
 Twake Space accepts the OIDC access tokens of your identity provider when they carry its audience (the backend's `OIDC_AUDIENCE`, for instance `twakespace`) and the `uuid`, `email`, `sid` and `org_id` claims in userinfo. Ask your identity provider administrator to add that audience and those claims to the OIDC client of your assistant, then give the server a command that prints a fresh access token:
 
 ```bash
-TWAKE_SPACE_TOKEN_COMMAND="my-token-broker --json"   # prints {"access_token": "...", "expires_at": <epoch s>}
-TWAKE_SPACE_OIDC_ISSUER=https://sso.example.com/     # to know who you are (userinfo)
+TWAKE_SPACE_TOKEN_COMMAND="/usr/local/bin/mcp-twake-ai token space"   # prints {"access_token": "...", "expires_at": <epoch s>}
+TWAKE_SPACE_OIDC_ISSUER=https://sso.example.com/                       # to know who you are (userinfo)
 ```
+
+For Twake.ai, [mcp-twake-ai](https://github.com/linagora/mcp-twake-wizard) provides that command (`mcp-twake-ai token space`); any other command printing this JSON works. Give the command with an absolute path, as some MCP clients do not see your `PATH`. It runs through the system shell (`sh`, or `cmd.exe` on Windows, where paths go in double quotes).
 
 Everything is then done as you: posts, votes and decisions carry your name. Every one of them is approved by you first (below).
 
@@ -189,7 +201,7 @@ mcp_servers:
     args: ["-y", "mcp-twake-space"]
     env:
       TWAKE_SPACE_URL: https://space.example.com
-      TWAKE_SPACE_TOKEN_COMMAND: my-token-broker --json
+      TWAKE_SPACE_TOKEN_COMMAND: /usr/local/bin/mcp-twake-ai token space
       TWAKE_SPACE_OIDC_ISSUER: https://sso.example.com/
       TWAKE_SPACE_APPROVAL_TIMEOUT_MS: "330000"
       USER_LANGUAGE: fr
