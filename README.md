@@ -100,7 +100,7 @@ npm run build          # then run: node build/index.js
 
 ### Acting as you (session token)
 
-Twake Space accepts the OIDC access tokens of your identity provider when they carry its audience (the backend's `OIDC_AUDIENCE`, for instance `twakespace`) and the `uuid`, `email`, `sid` and `org_id` claims in userinfo. Ask your identity provider administrator to add that audience and those claims to the OIDC client of your assistant, then give the server a command that prints a fresh access token:
+Twake Space accepts the OIDC access tokens of your identity provider when they carry its audience (the backend's `OIDC_AUDIENCE`, `twake-space` on the Twake.ai SaaS) and the `uuid`, `email`, `sid` and `org_id` claims in userinfo. Ask your identity provider administrator to add that audience and those claims to the OIDC client of your assistant, then give the server a command that prints a fresh access token:
 
 ```bash
 TWAKE_SPACE_TOKEN_COMMAND="/usr/local/bin/mcp-twake-ai token space"   # prints {"access_token": "...", "expires_at": <epoch s>}
