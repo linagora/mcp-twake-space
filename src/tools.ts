@@ -5,6 +5,7 @@ import { ApprovalUnavailable, Approver, NotApproved, type ApprovalMode, type Lan
 import { feedItemOut, fold, formatTime, matchByName, memberName, parseWhen, waitingOnMe, type ApiFeedItem, type ApiMember, type ApiSpace } from './format.js';
 import { makeIdentify, type Identity } from './identity.js';
 import { SpaceError, type SpaceClient } from './space.js';
+import { installBatch } from './batch/index.js';
 
 const READ = { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true } as const;
 const WRITE = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true } as const;
@@ -88,11 +89,42 @@ export interface ToolOptions {
   identify?: () => Promise<Identity>;
 }
 
+/** The tools that ask through act() (Approver.confirm) before acting: the ones approve_batch accepts. */
+export const WRITE_TOOLS = [
+  'create_post',
+  'edit_post',
+  'close_post',
+  'delete_post',
+  'pin_announcement',
+  'react',
+  'vote',
+  'decide_approval',
+  'answer_feedback',
+  'acknowledge',
+  'mark_feed_read',
+  'mark_notifications_read',
+  'schedule_meeting',
+  'create_space',
+  'update_space',
+  'set_space_state',
+  'add_members',
+  'set_member_role',
+  'remove_member',
+] as const;
+
 export function registerTools(server: McpServer, api: SpaceClient, opts: ToolOptions): void {
   const tz = opts.timeZone;
   const lang: Language = opts.language ?? 'en';
   const L = LABELS[lang];
   const approver = new Approver(server.server, opts.approval ?? 'elicit', lang, opts.approvalTimeoutMs ?? 600_000);
+  // approve_batch, and batchId on every write tool: installed before the tools are registered (spec §5)
+  installBatch(server, {
+    writeTools: WRITE_TOOLS,
+    z,
+    confirm: (message) => approver.confirmText(message),
+    clientMode: () => approver.mode === 'client',
+    language: () => approver.lang,
+  });
   const identify = opts.identify ?? makeIdentify(api);
   const time = (v: string | number) => formatTime(v, tz);
   const spaceUrl = (id: string) => `${opts.appUrl}/spaces/${id}`;

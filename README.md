@@ -6,7 +6,7 @@
 
 ## What is it?
 
-`mcp-twake-space` is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server. MCP is the open standard that lets AI assistants (Claude Desktop, Claude Code, Hermes Agent, Cursor, VS Code and many others) use external tools. This server exposes your Twake Space to the assistant as **29 tools**: spaces, members, feed (posts, polls, sign-off requests, announcements, activity cards), unread counts and notifications, and actions as you: post, vote, react, decide, acknowledge, schedule a meeting, administer a space.
+`mcp-twake-space` is a [Model Context Protocol](https://modelcontextprotocol.io) (MCP) server. MCP is the open standard that lets AI assistants (Claude Desktop, Claude Code, Hermes Agent, Cursor, VS Code and many others) use external tools. This server exposes your Twake Space to the assistant as **30 tools**: spaces, members, feed (posts, polls, sign-off requests, announcements, activity cards), unread counts and notifications, and actions as you: post, vote, react, decide, acknowledge, schedule a meeting, administer a space.
 
 Twake Space gives each team one place for its chat, tasks, drive, mail and calendar. The server talks to the Twake Space backend API, either as **you** (an OIDC session token from your identity provider) or with a **personal API token** you can revoke at any time.
 
@@ -41,7 +41,7 @@ Open source MCP servers connect AI assistants to the whole workplace:
 
 ## Features
 
-### 29 MCP tools
+### 30 MCP tools
 
 | Category | Tools |
 |---|---|
@@ -54,6 +54,7 @@ Open source MCP servers connect AI assistants to the whole workplace:
 | As you ¹ ⚠️ | `react`, `vote`, `decide_approval`, `answer_feedback`, `acknowledge`, `mark_feed_read`, `schedule_meeting` (video meeting in the team calendar) |
 | Administration ⚠️ | `create_space`, `update_space`, `add_members`, `set_member_role` |
 | Destructive ⚠️ | `delete_post`, `set_space_state` (archive, Bin, restore), `remove_member` |
+| Approval | `approve_batch` (one approval for a series of actions, see [below](#approving-a-series-of-writes-at-once)) |
 
 ⚠️ = asks for your approval first. ¹ = session token only: Twake Space keeps these for a signed-in person and refuses them to API tokens. Read tools carry `readOnlyHint`; write tools carry `openWorldHint`, and destructive ones `destructiveHint`. The server never deletes a space for good.
 
@@ -227,6 +228,10 @@ npx mcp-twake-space call create_post --json @post.json
 - **Writes:** typed by you in a terminal, a write is approved without a question (`--i` asks first). Started by an agent (`CLAUDECODE` or `HERMES_HOME` set), a write is refused: agents write through their MCP tools, which ask you. Without a terminal (cron), a write is refused unless it passes `--yes --as <name>` for a name you allowed once, in a terminal, with `npx mcp-twake-space allow-unattended <name>`. The allowed names are shared by the six Twake.ai servers, in `~/.config/twake-ai/cli.json` (`%USERPROFILE%\AppData\Roaming\twake-ai\cli.json` on Windows).
 - These rules stop an agent that follows instructions; they cannot stop a program that hides that it is an agent, or rewrites `cli.json`, under your account.
 - With [mcp-twake-ai](https://github.com/linagora/mcp-twake-ai), `npx mcp-twake-ai call space …` does the same with your Twake.ai sign-in.
+
+## Approving a series of writes at once
+
+Before a series of actions (several posts, several votes or members), an agent can ask you once for the whole list with `approve_batch`: you see every action, numbered, in one approval. Each call that then carries the `batchId` and matches a listed action exactly runs without another question, once, within 15 minutes. A call that is not in the list, or whose target changed since you approved, asks as usual. A batch approves exactly what each action's approval text shows; it belongs to the session that approved it, and is forgotten when that session ends. With `TWAKE_SPACE_APPROVAL=client`, there is no batch.
 
 ## Recommended safe configuration
 

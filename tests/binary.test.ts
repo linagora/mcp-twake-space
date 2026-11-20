@@ -100,7 +100,7 @@ describe('built server', () => {
     expect(refused.stderr).not.toContain(TOKEN);
   });
 
-  it('serves the 29 tools over stdio and acts only after the user accepts', async () => {
+  it('serves the 30 tools over stdio and acts only after the user accepts', async () => {
     const answers: string[] = ['decline', 'accept'];
     const prompts: string[] = [];
     const client = new Client({ name: 'e2e', version: '0' }, { capabilities: { elicitation: { form: {} } } });
@@ -111,7 +111,7 @@ describe('built server', () => {
     });
     await client.connect(new StdioClientTransport({ command: process.execPath, args: [BIN], env: env(), stderr: 'ignore' }));
     try {
-      expect((await client.listTools()).tools).toHaveLength(29);
+      expect((await client.listTools()).tools).toHaveLength(30); // 29 + approve_batch
       const who = JSON.parse(((await client.callTool({ name: 'whoami', arguments: {} })).content as { text: string }[])[0].text);
       expect(who).toMatchObject({ mode: 'session', acts_as: 'Alice MARTIN', approval: 'elicit' });
       const unread = JSON.parse(((await client.callTool({ name: 'get_unread', arguments: {} })).content as { text: string }[])[0].text);
