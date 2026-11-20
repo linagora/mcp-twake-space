@@ -15,6 +15,8 @@ import { SpaceClient, fileTokenSource, type TokenSource } from './space.js';
 import { CommandTokenProvider } from './token-command.js';
 import { registerTools } from './tools.js';
 import { VERSION } from './version.js';
+import { fileURLToPath } from 'node:url';
+import { isCliCommand, runCliCommand } from './cli-call/index.js';
 
 function tokenSource(auth: Config['auth']): TokenSource {
   if (auth.kind === 'file') return fileTokenSource(auth.file);
@@ -60,7 +62,14 @@ async function main(): Promise<void> {
   process.stderr.write(`mcp-twake-space ${VERSION} connected to ${config.appUrl}\n`);
 }
 
-main().catch((e) => {
-  process.stderr.write(`mcp-twake-space: ${(e as Error).message}\n`);
-  process.exit(1);
-});
+const cliArgs = process.argv.slice(2);
+if (isCliCommand(cliArgs)) {
+  // `call`, `tools` and `allow-unattended`: the server's tools from the command line.
+  // exitCode, not exit(): what was written on a piped stdout is flushed first
+  process.exitCode = await runCliCommand(cliArgs, { entry: fileURLToPath(import.meta.url) });
+} else {
+  main().catch((e) => {
+    process.stderr.write(`mcp-twake-space: ${(e as Error).message}\n`);
+    process.exit(1);
+  });
+}
