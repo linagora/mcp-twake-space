@@ -126,7 +126,9 @@ describe('catalog', () => {
     const READ = ['whoami', 'list_spaces', 'get_space', 'get_feed', 'get_feed_item', 'get_pinned', 'get_unread', 'catch_up', 'get_notifications', 'search_directory'];
     const WRITE = ['create_post', 'edit_post', 'close_post', 'pin_announcement', 'react', 'vote', 'decide_approval', 'answer_feedback', 'acknowledge', 'mark_feed_read', 'mark_notifications_read', 'schedule_meeting', 'create_space', 'update_space', 'add_members', 'set_member_role'];
     const DESTRUCTIVE = ['delete_post', 'set_space_state', 'remove_member'];
-    expect(Object.keys(by).sort()).toEqual([...READ, ...WRITE, ...DESTRUCTIVE].sort());
+    expect(Object.keys(by).sort()).toEqual([...READ, ...WRITE, ...DESTRUCTIVE, 'approve_batch'].sort());
+    // approve_batch only asks the user: nothing written, nothing outside the server
+    expect(by.approve_batch.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, openWorldHint: false });
     for (const n of READ) expect(by[n].annotations?.readOnlyHint).toBe(true);
     for (const n of [...WRITE, ...DESTRUCTIVE]) expect(by[n].annotations).toMatchObject({ readOnlyHint: false, openWorldHint: true });
     for (const n of DESTRUCTIVE) expect(by[n].annotations?.destructiveHint).toBe(true);
