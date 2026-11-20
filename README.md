@@ -37,6 +37,8 @@ Open source MCP servers connect AI assistants to the whole workplace:
 - **Act for you, with your OK each time**: "Vote Tuesday in the seminar poll", "Approve Bob's quote request with the comment OK", "Schedule a one-hour video meeting tomorrow at 2 pm in the Design space".
 - **Prepare**: post a message, a poll, a yes/no question, a sign-off request or an announcement.
 - **Organise**: create a space, rename it, change its tabs, add members, archive it.
+- **One approval for a series of actions**: before several actions (several posts, several votes or members), the assistant can ask you once for the exact list with `approve_batch`. Each listed call then runs without another question, once, within 15 minutes, in the session that approved it; anything else, or anything changed since, asks as usual (see [Approving a series of writes at once](#approving-a-series-of-writes-at-once)).
+- **From the command line**: `npx mcp-twake-space call <tool>` and `npx mcp-twake-space tools` run every tool from a terminal or a script, with the server's configuration. A write you type in a terminal is approved without a question (`--i` asks first); a write started by an agent is refused, since agents write through their MCP tools, which ask you; without a terminal (cron), a write needs `--yes --as <name>`, for a name you allowed once in a terminal (see [From the command line](#from-the-command-line)).
 - **Sovereignty**: the server runs next to your assistant and talks directly to your Twake Space.
 
 ## Features
